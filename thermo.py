@@ -1,8 +1,33 @@
-from os import startfile
+from os import startfile, getcwd
 from twitter import *
 from time import ctime
 from datetime import datetime
+from MyQR import myqr
+from PIL import Image, ImageDraw
 import json
+
+def qr_generate(text, fname): 
+    version, level, qr_name = myqr.run(
+        text,
+        version=1,
+        level='H',
+        picture=None,
+        colorized=False,
+        contrast=1.0,
+        brightness=1.0,
+        save_name=fname,
+        save_dir=getcwd()
+    )
+
+def tweet_to_image(image: str, text: str):
+    img=Image.open(image)
+    img=img.crop((0,-100,img.size[0],img.size[1]))
+    draw = ImageDraw.Draw(img)
+    draw.rectangle( (0, 0, img.size[0], 100), fill="white" )
+    draw.text((20, 10), text)
+    img.save('res.png')
+    
+#tweet_to_image('qrcode.png')
 
 #read settings for twitter. tokens etc
 settings = json.loads(open('settings.json', 'r').read())
@@ -54,8 +79,11 @@ for user in user_list:
             info = dict(
                 username = tweet['user']['name'],
                 text = tweet['text'],
-                time = tweet['created_at']
+                time = tweet['created_at'],
+                tid = tweet['id']
             )
+            qr_generate('ololo', '{username}{tid}.png'.format(**info))
+            tweet_to_image('{username}{tid}.png'.format(**info), template.format(**info))
             to_print += template.format(**info)
         user['lastmsg'] = max(map(lambda x:x['created_at'], new_tweets))
 
