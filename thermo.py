@@ -60,7 +60,7 @@ def convert(twitter_time):
         twitter_time = twitter_time[:-1] #avoiding newline symbols
     return datetime.strptime(twitter_time, '%a %b %d %H:%M:%S %z %Y')
 
-template ='''{username}:
+template ='''{username}\n   :
     {text}
         {time}
 
