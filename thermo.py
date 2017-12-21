@@ -1,9 +1,10 @@
-from os import startfile, getcwd
-from twitter import *
-from time import ctime
 from datetime import datetime
-from MyQR import myqr
+from os import startfile, getcwd
 from PIL import Image, ImageDraw, ImageFont
+from textwrap import wrap
+from time import ctime
+from twitter import *
+from MyQR import myqr
 import json
 
 def qr_generate(text, fname): 
@@ -19,13 +20,23 @@ def qr_generate(text, fname):
         save_dir=getcwd()
     )
 
-def tweet_to_image(image: str, text: str):
+def tweet_to_image(image: str, tweet: dict):
     arial = ImageFont.truetype("arial.ttf")
+    height = arial.font.height * len(wrap('%s ' % tweet['text'], width = 40))
     img=Image.open(image)
-    img=img.crop((0,-100,img.size[0],img.size[1]))
+    img=img.crop((0, -height - 10, img.size[0], img.size[1]))
     draw = ImageDraw.Draw(img)
-    draw.rectangle( (0, 0, img.size[0], 100), fill="white" )
-    draw.text((20, 10), text, font = arial)
+    draw.rectangle( (0, 0, img.size[0], height + 10), fill="white" )
+    #username and text
+    draw.text(
+        (20, 15),
+        '%s:\n%s' % ( tweet['user']['name'],
+                      ' \n'.join(wrap('%s ' % tweet['text'], width = 40))
+                      ),
+        font = arial
+    )
+    #time
+    draw.text((20, img.size[1] - 25), tweet['created_at'])
     img.save('res.png')
     
 #tweet_to_image('qrcode.png')
@@ -61,12 +72,6 @@ def convert(twitter_time):
         twitter_time = twitter_time[:-1] #avoiding newline symbols
     return datetime.strptime(twitter_time, '%a %b %d %H:%M:%S %z %Y')
 
-template ='''{username}\n   :
-    {text}
-        {time}
-
-'''
-
 to_print = ''
 
 #get updates
@@ -79,12 +84,10 @@ for user in user_list:
         for tweet in new_tweets:
             info = dict(
                 username = tweet['user']['name'],
-                text = tweet['text'],
-                time = tweet['created_at'],
                 tid = tweet['id']
             )
             qr_generate('ololo', '{username}{tid}.png'.format(**info))
-            tweet_to_image('{username}{tid}.png'.format(**info), template.format(**info))
+            tweet_to_image('{username}{tid}.png'.format(**info), tweet)
             to_print += template.format(**info)
         user['lastmsg'] = max(map(lambda x:x['created_at'], new_tweets))
 
