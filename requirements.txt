@@ -1,2 +1,4 @@
-twitter
+MSWinPrint
 myqr
+pypiwin32
+twitter
