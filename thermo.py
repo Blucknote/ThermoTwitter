@@ -41,7 +41,6 @@ def tweet_to_image(image: str, tweet: dict):
     draw.text((20, img.size[1] - 25), tweet['created_at'])
     img.save('res.png')
     
-#tweet_to_image('qrcode.png')
 
 #read settings for twitter. tokens etc
 settings = json.loads(open('settings.json', 'r').read())
@@ -81,10 +80,20 @@ def to_print(print_job):
     try:
         image = Image.open(print_job)
     except:
-        job.text((0, 0), print_job)
+        job.text((5, 5), print_job['username'])
+        y = 5
+        for wrap in print_job['text']:
+            y += 15
+            job.text((5, y), wrap)
+        
+        job.text((5, y + 15), print_job['time'])
     else:
         job.image((0, 0), image, (100, 100))
     job.end_document()
+
+def link(text):
+    pattern = open('link.rex').read()
+    return re.findall(pattern, text)
 
 #get updates
 for user in user_list:
@@ -95,18 +104,23 @@ for user in user_list:
     if new_tweets:
         for tweet in new_tweets:
             info = dict(
-                username = tweet['user']['name'],
+                username = '%s:' % tweet['user']['name'],
                 tid = tweet['id'],
-                text = tweet['text'],
+                text = wrap(tweet['text'], width= 40),
                 time = tweet['created_at']
             )
-            #if link:
-            qr_generate('ololo', '{username}{tid}.png'.format(**info))
-            tweet_to_image('{username}{tid}.png'.format(**info), tweet)
-            to_print('res.png')
-            #else:
-                #template = '{username}:\n  {text}\n     {time}'
-                #to_print(template.format(**info))
+            if link(tweet['text']):
+                qr_generate(
+                    ''.join(link(tweet['text'])[0]),
+                    '{username}{tid}.png'.format(**info)
+                )
+                tweet['text'] = re.sub(
+                    open('link.rex').read(), '', tweet['text']
+                )
+                tweet_to_image('{username}{tid}.png'.format(**info), tweet)
+                to_print('res.png')
+            else:
+                to_print(info)
         user['lastmsg'] = max(map(lambda x:x['created_at'], new_tweets))
 
 #writing changes
