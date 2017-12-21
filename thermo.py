@@ -3,7 +3,7 @@ from twitter import *
 from time import ctime
 from datetime import datetime
 from MyQR import myqr
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import json
 
 def qr_generate(text, fname): 
@@ -20,11 +20,12 @@ def qr_generate(text, fname):
     )
 
 def tweet_to_image(image: str, text: str):
+    arial = ImageFont.truetype("arial.ttf")
     img=Image.open(image)
     img=img.crop((0,-100,img.size[0],img.size[1]))
     draw = ImageDraw.Draw(img)
     draw.rectangle( (0, 0, img.size[0], 100), fill="white" )
-    draw.text((20, 10), text)
+    draw.text((20, 10), text, font = arial)
     img.save('res.png')
     
 #tweet_to_image('qrcode.png')
