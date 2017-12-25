@@ -92,5 +92,5 @@ for user in tweeples:
                 to_print('res.png')
             else:
                 to_print(info)
-        tweeples[user] = max(map(lambda x:x['created_at'], new_tweets))
-        update(user, tweeples[user])
+            tweeples[user] = max(map(lambda x:x['created_at'], new_tweets))
+            update(user, tweeples[user])
