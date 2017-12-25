@@ -1,12 +1,11 @@
+from data import * 
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 from textwrap import wrap
-from time import ctime
 from twitter import *
 from qrcode.MyQR import myqr
 import re
 import MSWinPrint
-import json
 
 def qr_generate(text, fname): 
     qr_name = myqr.run(
@@ -18,7 +17,6 @@ def qr_generate(text, fname):
         contrast=1.0,
         brightness=1.0,
         RAM= True
-        #save_name=fname,
     )
     return qr_name
 
@@ -41,36 +39,10 @@ def tweet_to_image(image, tweet: dict):
     image.save('res.png')
     
 
-#read settings for twitter. tokens etc
-settings = json.loads(open('settings.json', 'r').read())
-
 #authorising
 t = Twitter(auth= OAuth(**settings))
 
-#read tweeples
-user_list = []
-with open('tweeples.txt', 'r') as tweeples:
-    for line in tweeples:
-        if line[0] == '#':
-            continue
-        else:
-            parse = line.split('=')
-            if len(parse) == 1:
-                curtime = ctime()
-                parse.append('%s+0000 %s' % (curtime[:-4], curtime[-4:]))
-                
-            if parse[0][-1] == '\n':
-                parse[0] = parse[0][:-1]  #avoiding newline symbols
-            if parse[1][-1] == '\n':
-                parse[1] = parse[1][:-1]
-                
-            user_list.append(dict(
-                name = parse[0], lastmsg = parse[1]
-            ))
-
 def convert(twitter_time):
-    if twitter_time[-1] == '\n':
-        twitter_time = twitter_time[:-1] #avoiding newline symbols
     return datetime.strptime(twitter_time, '%a %b %d %H:%M:%S %z %Y')
 
 def to_print(print_job): 
@@ -95,10 +67,10 @@ def link(text):
     return re.findall(pattern, text)
 
 #get updates
-for user in user_list:
-    tweets = t.statuses.user_timeline(screen_name=user['name'])
+for user in tweeples:
+    tweets = t.statuses.user_timeline(screen_name=user)
     *new_tweets, = filter(
-        lambda x: convert(x['created_at']) > convert(user['lastmsg']), tweets
+        lambda x: convert(x['created_at']) > convert(tweeples[user]), tweets
     )
     if new_tweets:
         for tweet in new_tweets:
@@ -120,9 +92,5 @@ for user in user_list:
                 to_print('res.png')
             else:
                 to_print(info)
-        user['lastmsg'] = max(map(lambda x:x['created_at'], new_tweets))
-
-#writing changes
-with open('tweeples.txt', 'w') as tweeples:
-    for user in user_list:
-        tweeples.write('{name}={lastmsg}\n'.format(**user))
+        tweeples[user] = max(map(lambda x:x['created_at'], new_tweets))
+        update(user, tweeples[user])
