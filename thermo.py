@@ -1,16 +1,15 @@
 from datetime import datetime
-from os import getcwd
 from PIL import Image, ImageDraw, ImageFont
 from textwrap import wrap
 from time import ctime
 from twitter import *
-from MyQR import myqr
+from qrcode.MyQR import myqr
 import re
 import MSWinPrint
 import json
 
 def qr_generate(text, fname): 
-    version, level, qr_name = myqr.run(
+    qr_name = myqr.run(
         text,
         version=1,
         level='H',
@@ -18,28 +17,28 @@ def qr_generate(text, fname):
         colorized=False,
         contrast=1.0,
         brightness=1.0,
-        save_name=fname,
-        save_dir=getcwd()
+        RAM= True
+        #save_name=fname,
     )
+    return qr_name
 
-def tweet_to_image(image: str, tweet: dict):
+def tweet_to_image(image, tweet: dict):
     arial = ImageFont.truetype("arial.ttf")
-    height = arial.font.height * len(wrap('%s ' % tweet['text'], width = 40))
-    img=Image.open(image)
-    img=img.crop((0, -height - 10, img.size[0], img.size[1]))
-    draw = ImageDraw.Draw(img)
-    draw.rectangle( (0, 0, img.size[0], height + 10), fill="white" )
+    text = wrap('%s ' % tweet['text'], width = 40)
+    height = arial.font.height * len(text)
+
+    image = image.crop((0, -height - 10, image.size[0], image.size[1]))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle( (0, 0, image.size[0], height + 10), fill="white" )
     #username and text
     draw.text(
         (20, 15),
-        '%s:\n%s' % ( tweet['user']['name'],
-                      ' \n'.join(wrap('%s ' % tweet['text'], width = 40))
-                      ),
+        '%s:\n%s' % ( tweet['user']['name'], ' \n'.join(text)),
         font = arial
     )
     #time
-    draw.text((20, img.size[1] - 25), tweet['created_at'])
-    img.save('res.png')
+    draw.text((20, image.size[1] - 25), tweet['created_at'])
+    image.save('res.png')
     
 
 #read settings for twitter. tokens etc
@@ -110,14 +109,14 @@ for user in user_list:
                 time = tweet['created_at']
             )
             if link(tweet['text']):
-                qr_generate(
-                    ''.join(link(tweet['text'])[0]),
+                qr = qr_generate(
+                    ''.join(link(tweet['text'])[0]), 
                     '{username}{tid}.png'.format(**info)
                 )
                 tweet['text'] = re.sub(
                     open('link.rex').read(), '', tweet['text']
                 )
-                tweet_to_image('{username}{tid}.png'.format(**info), tweet)
+                tweet_to_image(qr, tweet)
                 to_print('res.png')
             else:
                 to_print(info)
