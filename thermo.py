@@ -36,7 +36,7 @@ def tweet_to_image(image, tweet: dict):
     )
     #time
     draw.text((20, image.size[1] - 25), tweet['created_at'])
-    image.save('res.png')
+    return image
     
 
 #authorising
@@ -48,9 +48,7 @@ def convert(twitter_time):
 def to_print(print_job): 
     job = MSWinPrint.document(papersize= 'letter')
     job.begin_document('tweet')
-    try:
-        image = Image.open(print_job)
-    except:
+    if type(print_job) is dict:
         job.text((5, 5), print_job['username'])
         y = 5
         for wrap in print_job['text']:
@@ -59,7 +57,7 @@ def to_print(print_job):
         
         job.text((5, y + 15), print_job['time'])
     else:
-        job.image((0, 0), image, (100, 100))
+        job.image((0, 0), print_job, (100, 100))
     job.end_document()
 
 def link(text):
@@ -88,8 +86,8 @@ for user in tweeples:
                 tweet['text'] = re.sub(
                     open('link.rex').read(), '', tweet['text']
                 )
-                tweet_to_image(qr, tweet)
-                to_print('res.png')
+                qr = tweet_to_image(qr, tweet)
+                to_print(qr)
             else:
                 to_print(info)
             tweeples[user] = max(map(lambda x:x['created_at'], new_tweets))
