@@ -1,6 +1,7 @@
 from data import * 
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
+from sys import argv
 from textwrap import wrap
 from twitter import *
 from qrcode.MyQR import myqr
@@ -64,11 +65,19 @@ def link(text):
     pattern = open('link.rex').read()
     return re.findall(pattern, text)
 
+if argv[1] == 'add':
+    add()
+if argv[1] == 'remove':
+    remove()
+if argv[1] == 'settings':
+    edit_settings()
+
 #get updates
 for user in tweeples:
     tweets = t.statuses.user_timeline(screen_name=user)
     *new_tweets, = filter(
-        lambda x: convert(x['created_at']) > convert(tweeples[user]), tweets
+        lambda x: convert(x['created_at']) > convert(tweeples[user]),
+        tweets
     )
     if new_tweets:
         for tweet in new_tweets:
