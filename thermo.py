@@ -38,7 +38,23 @@ def tweet_to_image(image, tweet: dict):
     #time
     draw.text((20, image.size[1] - 25), tweet['created_at'])
     return image
-    
+
+#check args
+if len(argv) > 1:
+    if argv[1] == 'add':
+        add()
+    if argv[1] == 'remove':
+        remove()
+    if argv[1] == 'settings':
+        edit_settings()
+    if argv[1] == 'tui':
+        try:
+            import asciimatics
+        except:
+            import pip
+            pip.main(['install', 'asciimatics'])
+        else:
+            import tui    
 
 #authorising
 t = Twitter(auth= OAuth(**settings))
@@ -64,13 +80,6 @@ def to_print(print_job):
 def link(text):
     pattern = open('link.rex').read()
     return re.findall(pattern, text)
-
-if argv[1] == 'add':
-    add()
-if argv[1] == 'remove':
-    remove()
-if argv[1] == 'settings':
-    edit_settings()
 
 #get updates
 for user in tweeples:
