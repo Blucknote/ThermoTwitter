@@ -21,23 +21,16 @@ def qr_generate(text, fname):
     )
     return qr_name
 
-def tweet_to_image(image, tweet: dict):
-    arial = ImageFont.truetype("arial.ttf")
+def tweet_to_image(qr: Image, tweet: dict):
+    arial = ImageFont.truetype("arial.ttf", size= 6)
     text = wrap('%s ' % tweet['text'], width = 40)
     height = arial.font.height * len(text)
-
-    image = image.crop((0, -height - 10, image.size[0], image.size[1]))
-    draw = ImageDraw.Draw(image)
-    draw.rectangle( (0, 0, image.size[0], height + 10), fill="white" )
+    
     #username and text
-    draw.text(
-        (20, 15),
-        '%s:\n%s' % ( tweet['user']['name'], ' \n'.join(text)),
-        font = arial
-    )
+    to_print('%s:\n%s' % ( tweet['user']['name'], ' \n'.join(text)))
+    to_print(qr)
     #time
-    draw.text((20, image.size[1] - 25), tweet['created_at'])
-    return image
+    to_print(tweet['created_at'])
 
 #check args
 if len(argv) > 1:
@@ -62,19 +55,21 @@ t = Twitter(auth= OAuth(**settings))
 def convert(twitter_time):
     return datetime.strptime(twitter_time, '%a %b %d %H:%M:%S %z %Y')
 
-def to_print(print_job): 
+def to_print(data): 
     job = MSWinPrint.document(papersize= 'letter')
     job.begin_document('tweet')
-    if type(print_job) is dict:
-        job.text((5, 5), print_job['username'])
+    if type(data) is dict:
+        job.text((5, 5), data['username'])
         y = 5
-        for wrap in print_job['text']:
+        for wrap in data['text']:
             y += 15
             job.text((5, y), wrap)
         
-        job.text((5, y + 15), print_job['time'])
+        job.text((5, y + 15), data['time'])
+    elif type(data) is str:
+        job.text((5, 5), data)
     else:
-        job.image((0, 0), print_job, (100, 100))
+        job.image((0, 0), data, (100, 100))
     job.end_document()
 
 def link(text):
@@ -104,8 +99,7 @@ for user in tweeples:
                 tweet['text'] = re.sub(
                     open('link.rex').read(), '', tweet['text']
                 )
-                qr = tweet_to_image(qr, tweet)
-                to_print(qr)
+                tweet_to_image(qr, tweet)
             else:
                 to_print(info)
             tweeples[user] = max(map(lambda x:x['created_at'], new_tweets))
